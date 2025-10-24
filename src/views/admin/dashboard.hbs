@@ -1,0 +1,133 @@
+{{!-- views/admin/dashboard.hbs --}}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="h3 mb-0">Panel de control</h1>
+        <a class="btn btn-outline-primary" href="/admin/orders">Ver pedidos</a>
+    </div>
+
+    {{!-- KPIs principales --}}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Ventas totales (aprobadas)</div>
+                    <div class="display-6 fw-semibold">{{currency (def totalSales 0)}}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Órdenes aprobadas</div>
+                    <div class="display-6 fw-semibold">{{def ordersApprovedCount 0}}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Pedidos del día</div>
+                    <div class="display-6 fw-semibold">{{def ordersToday 0}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- Top productos por cantidad (últimas aprobadas) --}}
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Top 5 productos (por cantidad)</div>
+                <div class="card-body p-0">
+                    {{#if topProducts.length}}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:56px;">#</th>
+                                    <th>Producto</th>
+                                    <th class="text-end">Unidades</th>
+                                    <th class="text-end">Ingresos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each topProducts}}
+                                <tr>
+                                    <td class="small align-middle">{{@index}}</td>
+                                    <td class="align-middle">
+                                        <div class="fw-semibold">{{def title "—"}}</div>
+                                        <div class="text-muted small">ID: {{def productId "—"}}</div>
+                                    </td>
+                                    <td class="text-end align-middle">{{def qty 0}}</td>
+                                    <td class="text-end align-middle">{{currency (def revenue 0)}}</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="p-3 text-muted">Aún no hay productos con ventas aprobadas.</div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        {{!-- Últimos pedidos --}}
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Últimos pedidos</span>
+                    <a href="/admin/orders" class="btn btn-sm btn-outline-secondary">Todos</a>
+                </div>
+                <div class="card-body p-0">
+                    {{#if latestOrders.length}}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:56px;">#</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each latestOrders}}
+                                <tr>
+                                    <td class="small">{{@index}}</td>
+                                    <td class="small">{{dateTime createdAt}}</td>
+                                    <td class="small">{{def userId "—"}}</td>
+                                    <td>
+                                        {{#if (eq status "approved")}}
+                                        <span class="badge bg-success text-uppercase">{{status}}</span>
+                                        {{else if (eq status "pending")}}
+                                        <span class="badge bg-warning text-dark text-uppercase">{{status}}</span>
+                                        {{else if (eq status "rejected")}}
+                                        <span class="badge bg-danger text-uppercase">{{status}}</span>
+                                        {{else}}
+                                        <span class="badge bg-secondary text-uppercase">{{status}}</span>
+                                        {{/if}}
+                                    </td>
+                                    <td class="text-end">{{currency total}}</td>
+                                    <td class="text-end">
+                                        <a href="/admin/orders/{{_id}}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="p-3 text-muted">No hay pedidos aún.</div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

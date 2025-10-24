@@ -1,0 +1,102 @@
+{{!-- views/admin/orders.hbs --}}
+{{!------------------------------------------------------------
+Panel de Pedidos (Módulo 5)
+- Muestra tabla de órdenes con filtros por estado y fecha
+- Permite cambiar estado manualmente (si está habilitado)
+-------------------------------------------------------------}}
+
+<div class="container py-4">
+    <h1 class="mb-4">📦 Pedidos</h1>
+
+    {{!-- Filtros --}}
+    <form method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-md-3">
+            <label for="status" class="form-label">Estado</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Todos</option>
+                <option value="created" {{#if (eq filters.status "created" )}}selected{{/if}}>Creado</option>
+                <option value="approved" {{#if (eq filters.status "approved" )}}selected{{/if}}>Aprobado</option>
+                <option value="pending" {{#if (eq filters.status "pending" )}}selected{{/if}}>Pendiente</option>
+                <option value="rejected" {{#if (eq filters.status "rejected" )}}selected{{/if}}>Rechazado</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="from" class="form-label">Desde</label>
+            <input type="date" id="from" name="from" value="{{filters.from}}" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label for="to" class="form-label">Hasta</label>
+            <input type="date" id="to" name="to" value="{{filters.to}}" class="form-control" />
+        </div>
+        <div class="col-md-3 text-end">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="/admin/orders" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+
+    {{!-- Tabla de pedidos --}}
+    {{#if items.length}}
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>MP Pref.</th>
+                    <th>MP Pago</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td>{{@index}}</td>
+                    <td>{{formatDate createdAt "DD/MM/YYYY HH:mm"}}</td>
+                    <td>{{userId}}</td>
+                    <td>
+                        <span class="badge bg-{{statusColor status}} text-uppercase">{{status}}</span>
+                    </td>
+                    <td>${{currency total}}</td>
+                    <td class="small text-muted">{{truncate mpPreferenceId 10}}</td>
+                    <td class="small text-muted">{{truncate mpPaymentId 10}}</td>
+                    <td>
+                        <a href="/admin/orders/{{_id}}" class="btn btn-sm btn-outline-primary">Ver</a>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+
+    {{!-- Paginación simple --}}
+    <nav aria-label="pagination">
+        <ul class="pagination justify-content-center">
+            {{#if (gt pagination.page 1)}}
+            <li class="page-item">
+                <a class="page-link" href="?page={{dec pagination.page}}">Anterior</a>
+            </li>
+            {{/if}}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Página {{pagination.page}} de {{pagination.pages}}
+                </span>
+            </li>
+
+            {{#if (lt pagination.page pagination.pages)}}
+            <li class="page-item">
+                <a class="page-link" href="?page={{inc pagination.page}}">Siguiente</a>
+            </li>
+            {{/if}}
+        </ul>
+    </nav>
+
+    {{else}}
+    <div class="alert alert-info text-center">
+        No hay pedidos que coincidan con el filtro.
+    </div>
+    {{/if}}
+</div>

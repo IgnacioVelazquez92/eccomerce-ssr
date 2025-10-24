@@ -1,0 +1,212 @@
+{{!-- views/admin/products.hbs --}}
+{{!--
+Listado de productos (admin)
+- Búsqueda por q (título/SKU)
+- Paginación básica (page/limit)
+- Acciones: Editar, Toggles (active/featured/promo), Borrar
+--}}
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="h3 m-0">Productos</h1>
+        <a href="/admin/products/new" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Nuevo producto
+        </a>
+    </div>
+
+    {{!-- Barra de búsqueda / filtros --}}
+    <form class="row g-2 align-items-end mb-3" method="GET" action="/admin/products">
+        <div class="col-sm-6 col-md-5">
+            <label class="form-label" for="q">Buscar (título o SKU)</label>
+            <input id="q" name="q" type="search" placeholder="ej: Yerba 500g o ABC123" class="form-control"
+                value="{{q}}">
+        </div>
+        <div class="col-sm-3 col-md-2">
+            <label class="form-label" for="limit">Por página</label>
+            <select id="limit" name="limit" class="form-select">
+                <option value="10" {{#if (eq pagination.limit 10)}}selected{{/if}}>10</option>
+                <option value="20" {{#if (eq pagination.limit 20)}}selected{{/if}}>20</option>
+                <option value="50" {{#if (eq pagination.limit 50)}}selected{{/if}}>50</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-search"></i> Buscar
+            </button>
+            <a class="btn btn-outline-dark" href="/admin/products">Limpiar</a>
+        </div>
+    </form>
+
+    {{!-- Tabla --}}
+    <div class="table-responsive">
+        <table class="table align-middle table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:64px;">Img</th>
+                    <th>Producto</th>
+                    <th>SKU</th>
+                    <th>Categoría</th>
+                    <th class="text-end">Precio</th>
+                    <th class="text-end">Stock</th>
+                    <th>Flags</th>
+                    <th style="width:280px;" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#if items.length}}
+                {{#each items}}
+                <tr>
+                    <td>
+                        {{#if imageUrl}}
+                        <img src="{{imageUrl}}" alt="{{title}}" class="img-thumbnail"
+                            style="width:56px;height:56px;object-fit:cover;">
+                        {{else}}
+                        <div class="bg-light border rounded d-flex align-items-center justify-content-center"
+                            style="width:56px;height:56px;">
+                            <span class="text-muted small">N/A</span>
+                        </div>
+                        {{/if}}
+                    </td>
+
+                    <td>
+                        <div class="fw-semibold">{{title}}</div>
+                        {{#if description}}
+                        <div class="text-muted small text-truncate" style="max-width: 360px;">{{description}}</div>
+                        {{/if}}
+                        {{#if promoEnabled}}
+                        <small class="text-success d-inline-block mt-1">Promo: -{{promoPct}}%</small>
+                        {{/if}}
+                    </td>
+
+                    <td><code>{{sku}}</code></td>
+
+                    <td>
+                        {{#if categoryName}}
+                        <span class="badge bg-body-tertiary text-dark border">{{categoryName}}</span>
+                        {{else}}
+                        <span class="text-muted">—</span>
+                        {{/if}}
+                    </td>
+
+                    <td class="text-end">$ {{price}}</td>
+                    <td class="text-end">{{stock}}</td>
+
+                    <td>
+                        {{#if active}}
+                        <span class="badge text-bg-success">activo</span>
+                        {{else}}
+                        <span class="badge text-bg-secondary">inactivo</span>
+                        {{/if}}
+                        {{#if featured}}
+                        <span class="badge text-bg-info">destacado</span>
+                        {{/if}}
+                        {{#if promoEnabled}}
+                        <span class="badge text-bg-warning text-dark">promo</span>
+                        {{/if}}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex flex-wrap justify-content-end gap-2">
+
+                            {{!-- Botón Editar (Lápiz) --}}
+                            <a class="btn btn-sm btn-outline-primary" href="/admin/products/{{_id}}/edit"
+                                title="Editar">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            {{!-- Botón Activar/Desactivar (Interruptor/Ojo) --}}
+                            <form method="POST" action="/admin/products/{{_id}}/toggle/active">
+                                <button class="btn btn-sm btn-outline-secondary" type="submit"
+                                    title="{{#if active}}Desactivar{{else}}Activar{{/if}}">
+                                    {{#if active}}
+                                    <i class="bi bi-toggle-on"></i> {{!-- Interruptor encendido para Desactivar --}}
+                                    {{else}}
+                                    <i class="bi bi-toggle-off"></i> {{!-- Interruptor apagado para Activar --}}
+                                    {{/if}}
+                                </button>
+                            </form>
+
+                            {{!-- Botón Destacar/Quitar Destacado (Estrella) --}}
+                            <form method="POST" action="/admin/products/{{_id}}/toggle/featured">
+                                <button class="btn btn-sm btn-outline-warning" type="submit"
+                                    title="{{#if featured}}Quitar Destacado{{else}}Destacar{{/if}}">
+                                    {{#if featured}}
+                                    <i class="bi bi-star-fill"></i> {{!-- Estrella rellena para Quitar Destacado --}}
+                                    {{else}}
+                                    <i class="bi bi-star"></i> {{!-- Estrella vacía para Destacar --}}
+                                    {{/if}}
+                                </button>
+                            </form>
+
+                            {{!-- Botón Poner/Quitar Promo (Etiqueta de precio/Porcentaje) --}}
+                            <form method="POST" action="/admin/products/{{_id}}/toggle/promoEnabled">
+                                <button class="btn btn-sm btn-outline-success" type="submit"
+                                    title="{{#if promoEnabled}}Quitar Promoción{{else}}Poner Promoción{{/if}}">
+                                    {{#if promoEnabled}}
+                                    <i class="bi bi-percent"></i> {{!-- Icono % para Quitar Promoción (ya está en promo)
+                                    --}}
+                                    {{else}}
+                                    <i class="bi bi-tags"></i> {{!-- Icono de Etiquetas para Poner Promoción --}}
+                                    {{/if}}
+                                </button>
+                            </form>
+
+                            {{!-- Botón Borrar (Papelera) --}}
+                            <form method="POST" action="/admin/products/{{_id}}/delete"
+                                onsubmit="return confirm('¿Eliminar &quot;{{title}}&quot;? Esta acción no se puede deshacer.');">
+                                <button class="btn btn-sm btn-outline-danger" type="submit" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {{/each}}
+                {{else}}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        No hay productos para mostrar.
+                    </td>
+                </tr>
+                {{/if}}
+            </tbody>
+        </table>
+    </div>
+
+    {{!-- Paginación --}}
+    {{#if items.length}}
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="text-muted">
+            Página {{pagination.page}} de {{pagination.totalPages}} · Total: {{pagination.total}}
+        </div>
+
+        <form id="pagerForm" method="GET" action="/admin/products" class="d-flex gap-2">
+            <input type="hidden" name="q" value="{{q}}">
+            <input type="hidden" name="limit" value="{{pagination.limit}}">
+            <input type="hidden" id="pagerPage" name="page" value="{{pagination.page}}">
+            <button class="btn btn-outline-secondary btn-sm" data-direction="-1" {{#unless
+                pagination.hasPrev}}disabled{{/unless}} type="button">← Anterior</button>
+            <button class="btn btn-outline-secondary btn-sm" data-direction="1" {{#unless
+                pagination.hasNext}}disabled{{/unless}} type="button">Siguiente →</button>
+        </form>
+    </div>
+    {{/if}}
+
+</div>
+
+<script nonce="{{cspNonce}}">
+    (function () {
+        const form = document.getElementById('pagerForm');
+        if (!form) return;
+        const pageInput = document.getElementById('pagerPage');
+        form.addEventListener('click', function (ev) {
+            const btn = ev.target.closest('button[data-direction]');
+            if (!btn) return;
+            const dir = parseInt(btn.getAttribute('data-direction'), 10);
+            const current = parseInt(pageInput.value || '1', 10);
+            const next = Math.max(1, current + dir);
+            pageInput.value = String(next);
+            form.submit();
+        });
+    })();
+</script>

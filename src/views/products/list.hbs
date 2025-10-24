@@ -1,0 +1,41 @@
+{{!-- views/products/list.hbs --}}
+<div class="container vh-100 py-4">
+    <header class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+        <h1 class="h4 mb-0">Catálogo</h1>
+        <div class="text-muted small">
+            Página {{pagination.page}} de {{pagination.totalPages}} · {{pagination.total}} productos
+        </div>
+    </header>
+
+    {{#if items.length}}
+    <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3">
+        {{#each items}}
+        <div class="col">
+            {{> product-card}}
+        </div>
+        {{/each}}
+    </div>
+
+    <nav class="mt-4" aria-label="Paginación">
+        <ul class="pagination justify-content-center">
+            {{#if pagination.prevUrl}}
+            <li class="page-item"><a class="page-link" href="{{pagination.prevUrl}}" aria-label="Anterior">&laquo;</a>
+            </li>
+            {{else}}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {{/if}}
+
+            <li class="page-item active"><span class="page-link">{{pagination.page}}</span></li>
+
+            {{#if pagination.nextUrl}}
+            <li class="page-item"><a class="page-link" href="{{pagination.nextUrl}}" aria-label="Siguiente">&raquo;</a>
+            </li>
+            {{else}}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {{/if}}
+        </ul>
+    </nav>
+    {{else}}
+    <div class="alert alert-info">No hay productos que coincidan con tu búsqueda.</div>
+    {{/if}}
+</div>

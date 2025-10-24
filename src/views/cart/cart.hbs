@@ -1,0 +1,107 @@
+{{!-- views/cart/cart.hbs --}}
+{{!-- Espera: cart { items[], subtotal, discount, total, count } --}}
+<div class="container py-4">
+    <h1 class="h4 mb-3">Tu carrito</h1>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr class="text-muted">
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-center">Precio</th>
+                            <th scope="col" style="width: 140px;" class="text-center">Cant.</th>
+                            <th scope="col" class="text-end">Subtotal</th>
+                            <th scope="col" class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each cart.items}}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="ratio ratio-1x1 bg-light rounded" style="width:64px;">
+                                        {{#if imageUrl}}
+                                        <img src="{{imageUrl}}" class="img-fluid object-fit-contain p-1"
+                                            alt="{{title}}">
+                                        {{/if}}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{title}}</div>
+                                        <div class="text-muted small">ID: {{productId}}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="text-center">
+                                {{#if promoPrice}}
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold">{{currency promoPrice}}</span>
+                                    <small class="text-muted text-decoration-line-through">{{currency price}}</small>
+                                </div>
+                                {{else}}
+                                <span class="fw-semibold">{{currency price}}</span>
+                                {{/if}}
+                            </td>
+
+                            <td class="text-center">
+                                <form action="/cart/qty/{{productId}}" method="post"
+                                    class="d-flex justify-content-center">
+                                    <input type="number" name="qty" min="0" value="{{qty}}"
+                                        class="form-control form-control-sm text-center" style="max-width:90px;">
+                                </form>
+                                <div class="form-text">0 elimina</div>
+                            </td>
+
+                            <td class="text-end">{{currency lineSubtotal}}</td>
+
+                            <td class="text-end">
+                                <form action="/cart/remove/{{productId}}" method="post">
+                                    <button class="btn btn-sm btn-outline-danger">Quitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="/">Seguir comprando</a>
+                <form action="/cart/clear" method="post">
+                    <button class="btn btn-outline-danger" type="submit">Vaciar carrito</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card">
+                <div class="card-header fw-semibold">Resumen</div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-6 text-muted">Ítems</dt>
+                        <dd class="col-6 text-end">{{cart.count}}</dd>
+
+                        <dt class="col-6 text-muted">Subtotal</dt>
+                        <dd class="col-6 text-end">{{currency cart.subtotal}}</dd>
+
+                        <dt class="col-6 text-muted">Descuentos</dt>
+                        <dd class="col-6 text-end">{{currency cart.discount}}</dd>
+
+                        <div class="col-12">
+                            <hr>
+                        </div>
+
+                        <dt class="col-6 fw-semibold">Total</dt>
+                        <dd class="col-6 text-end fw-semibold h5 mb-0">{{currency cart.total}}</dd>
+                    </dl>
+                </div>
+                <div class="card-footer d-grid gap-2">
+                    <a href="/checkout" class="btn btn-primary">Ir a pagar</a>
+                    <a href="/" class="btn btn-outline-secondary">Seguir comprando</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

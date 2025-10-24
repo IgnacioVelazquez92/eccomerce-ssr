@@ -1,0 +1,10 @@
+{{!-- views/shared/404.hbs --}}
+{{#> layouts/main title=(or title "Página no encontrada") }}
+<div class="container py-5">
+    <div class="text-center">
+        <h1 class="display-6 mb-3 animate__animated animate__fadeInLeft">404 — Página no encontrada</h1>
+        <p class="mb-4">{{message}}</p>
+        <a class="btn btn-primary" href="/">Ir al inicio</a>
+    </div>
+</div>
+{{/layouts/main}}

@@ -1,0 +1,83 @@
+{{!-- src/views/checkout/failure.hbs --}}
+{{!-- Vista: Pago rechazado (UX con explicación, sugerencias y CTA para reintentar) --}}
+{{!-- Requiere variables: title, order?, mp.{paymentId?, preferenceId?, status?}, message? --}}
+
+{{!< main}} <section class="container py-5" aria-labelledby="checkout-failure-title">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="text-center mb-4">
+                <div class="display-6 text-danger" id="checkout-failure-title" role="status" aria-live="polite">❌ Pago
+                    rechazado</div>
+                <p class="text-muted mt-2">
+                    {{#if message}}
+                    {{message}}
+                    {{else}}
+                    Tu pago no pudo completarse. Podés revisar tus datos e intentar nuevamente.
+                    {{/if}}
+                </p>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Detalle</h2>
+
+                    {{#if order}}
+                    <dl class="row">
+                        <dt class="col-5 col-md-4">N° de orden</dt>
+                        <dd class="col-7 col-md-8">{{order._id}}</dd>
+
+                        <dt class="col-5 col-md-4">Total</dt>
+                        <dd class="col-7 col-md-8">${{order.total}}</dd>
+
+                        {{#if mp.paymentId}}
+                        <dt class="col-5 col-md-4">Pago (MP)</dt>
+                        <dd class="col-7 col-md-8">{{mp.paymentId}}</dd>
+                        {{/if}}
+                        {{#if mp.preferenceId}}
+                        <dt class="col-5 col-md-4">Preferencia</dt>
+                        <dd class="col-7 col-md-8">{{mp.preferenceId}}</dd>
+                        {{/if}}
+                        {{#if mp.status}}
+                        <dt class="col-5 col-md-4">Estado</dt>
+                        <dd class="col-7 col-md-8 text-danger fw-semibold">{{mp.status}}</dd>
+                        {{/if}}
+                    </dl>
+
+                    <hr class="my-4" />
+
+                    <div>
+                        <h3 class="h6 mb-3">Productos</h3>
+                        <ul class="list-group list-group-flush">
+                            {{#each order.items}}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">{{this.title}}</div>
+                                    <small class="text-muted">x{{this.qty}} • ${{this.price}} c/u</small>
+                                </div>
+                                <div class="fw-semibold">${{this.subtotal}}</div>
+                            </li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                    {{else}}
+                    <div class="alert alert-info mb-0" role="alert">
+                        No pudimos identificar tu orden. Revisá <a href="/cart">tu carrito</a> y volvé a intentar el
+                        pago.
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <div class="d-grid d-sm-flex gap-2">
+                <a href="/cart" class="btn btn-primary btn-lg">Volver al carrito</a>
+                <a href="/catalog" class="btn btn-outline-secondary btn-lg">Seguir explorando</a>
+                <a href="/help" class="btn btn-link btn-lg">Necesito ayuda</a>
+            </div>
+
+            <p class="text-muted mt-3 mb-0 small">
+                Consejos: verificá el límite de tu tarjeta, el CVV y que la cuenta esté habilitada para compras online.
+            </p>
+        </div>
+    </div>
+    </section>

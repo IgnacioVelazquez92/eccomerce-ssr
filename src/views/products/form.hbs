@@ -1,0 +1,282 @@
+{{!-- views/products/form.hbs --}}
+{{!--
+Formulario de alta/edición de producto
+- enctype multipart/form-data (input name="image")
+- Muestra errores por campo
+- Preview de imagen actual si existe
+--}}
+
+<div class="container py-4" style="max-width: 880px;">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="h3 m-0">{{#if isEdit}}Editar producto{{else}}Nuevo producto{{/if}}</h1>
+        <a href="/admin/products" class="btn btn-outline-secondary">← Volver</a>
+    </div>
+
+    <form method="POST" action="{{#if isEdit}}/admin/products/{{product._id}}{{else}}/admin/products{{/if}}"
+        enctype="multipart/form-data" class="needs-validation" novalidate>
+
+        {{!-- Título --}}
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <input type="text" class="form-control {{#if errors.title}}is-invalid{{/if}}" id="title" name="title"
+                value="{{product.title}}" required>
+            {{#if errors.title}}<div class="invalid-feedback">{{errors.title}}</div>{{/if}}
+        </div>
+
+        {{!-- Categoría --}}
+        <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <label class="form-label m-0">Categoría</label>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal"
+                    data-bs-target="#categoryModal" aria-controls="categoryModal">
+                    + Nueva / gestionar
+                </button>
+            </div>
+
+            <select class="form-select mt-2" name="categoryId">
+                <option value="">Sin categoría</option>
+                {{#each categories}}
+                <option value="{{_id}}" {{#if (eq ../product.categoryId _id)}}selected{{/if}}>{{name}}</option>
+                {{/each}}
+            </select>
+        </div>
+
+        {{!-- SKU / Precio / Stock --}}
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <label for="sku" class="form-label">SKU</label>
+                <input type="text" class="form-control {{#if errors.sku}}is-invalid{{/if}}" id="sku" name="sku"
+                    value="{{product.sku}}" required>
+                {{#if errors.sku}}<div class="invalid-feedback">{{errors.sku}}</div>{{/if}}
+            </div>
+            <div class="col-sm-3">
+                <label for="price" class="form-label">Precio ($)</label>
+                <input type="number" step="0.01" min="0" class="form-control {{#if errors.price}}is-invalid{{/if}}"
+                    id="price" name="price" value="{{product.price}}" required>
+                {{#if errors.price}}<div class="invalid-feedback">{{errors.price}}</div>{{/if}}
+            </div>
+            <div class="col-sm-3">
+                <label for="stock" class="form-label">Stock</label>
+                <input type="number" step="1" min="0" class="form-control {{#if errors.stock}}is-invalid{{/if}}"
+                    id="stock" name="stock" value="{{product.stock}}" required>
+                {{#if errors.stock}}<div class="invalid-feedback">{{errors.stock}}</div>{{/if}}
+            </div>
+        </div>
+
+        {{!-- Flags --}}
+        <div class="row g-3 mt-0">
+            <div class="col-sm-4 form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="active" name="active" {{#if
+                    product.active}}checked{{/if}}>
+                <label class="form-check-label" for="active">Activo</label>
+            </div>
+            <div class="col-sm-4 form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="featured" name="featured" {{#if
+                    product.featured}}checked{{/if}}>
+                <label class="form-check-label" for="featured">Destacado</label>
+            </div>
+            <div class="col-sm-4 form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="promoEnabled" name="promoEnabled" {{#if
+                    product.promoEnabled}}checked{{/if}}>
+                <label class="form-check-label" for="promoEnabled">Promo habilitada</label>
+            </div>
+        </div>
+
+        {{!-- Promo --}}
+        <div class="row g-3 mt-1">
+            <div class="col-sm-4">
+                <label for="promoPct" class="form-label">Descuento %</label>
+                <input type="number" step="1" min="0" max="100"
+                    class="form-control {{#if errors.promoPct}}is-invalid{{/if}}" id="promoPct" name="promoPct"
+                    value="{{product.promoPct}}">
+                {{#if errors.promoPct}}<div class="invalid-feedback">{{errors.promoPct}}</div>{{/if}}
+            </div>
+            <div class="col-sm-8 d-flex align-items-end">
+                <div class="form-text">Si la promo está habilitada, se aplicará el % al precio base.</div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        {{!-- Descripción breve --}}
+        <div class="mb-3">
+            <label class="form-label" for="description">Descripción breve</label>
+            <textarea id="description" name="description" rows="3" class="form-control"
+                placeholder="Descripción corta para la ficha de producto">{{product.description}}</textarea>
+        </div>
+
+        {{!-- Ficha técnica (un ítem por línea) --}}
+        <div class="mb-3">
+            <label class="form-label" for="techSpecs">Ficha técnica (una línea por ítem)</label>
+            <textarea id="techSpecs" name="techSpecs" rows="2" class="form-control"
+                placeholder="Ejemplo: Peso: 500 g">{{product.techSpecsText}}</textarea>
+            <div class="form-text">Se guardará como una lista de características.</div>
+        </div>
+
+        <hr class="my-4">
+
+        {{!-- Imagen actual + subida --}}
+        <div class="row g-4">
+            <div class="col-md-5">
+                <label class="form-label">Imagen actual</label>
+                <div class="border rounded p-2 d-flex align-items-center justify-content-center" style="height: 220px;">
+                    {{#if product.imageUrl}}
+                    <img id="previewCurrent" src="{{product.imageUrl}}" alt="{{product.title}}"
+                        style="max-width:100%;max-height:100%;object-fit:contain;">
+                    {{else}}
+                    <span class="text-muted">Sin imagen</span>
+                    {{/if}}
+                </div>
+            </div>
+            <div class="col-md-7">
+                <label for="image" class="form-label">Subir imagen (JPG/PNG/WEBP · máx. 2MB)</label>
+                <input class="form-control {{#if errors.image}}is-invalid{{/if}}" type="file" id="image" name="image"
+                    accept="image/jpeg,image/png,image/webp">
+                {{#if errors.image}}<div class="invalid-feedback d-block">{{errors.image}}</div>{{/if}}
+
+                <div class="form-text">Si elegís una nueva, se reemplazará la imagen anterior.</div>
+
+                <div class="mt-3">
+                    <label class="form-label">Previsualización nueva</label>
+                    <div class="border rounded p-2 d-flex align-items-center justify-content-center"
+                        style="height: 220px;">
+                        <img id="previewNew" alt="Preview"
+                            style="max-width:100%;max-height:100%;object-fit:contain; display:none;">
+                        <span id="previewPlaceholder" class="text-muted">Sin selección</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                {{#if isEdit}}Guardar cambios{{else}}Crear producto{{/if}}
+            </button>
+            <a href="/admin/products" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+
+    {{!-- Modal Categorías --}}
+    <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="categoryModalLabel" class="modal-title">Categorías</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-12 col-lg-6">
+                            <div class="card">
+                                <div class="card-header fw-semibold">Crear nueva categoría</div>
+                                <div class="card-body">
+                                    {{!-- IMPORTANTE: returnTo en query y hidden --}}
+                                    <form method="post"
+                                        action="/admin/categories?returnTo={{#if @root.request.originalUrl}}{{@root.request.originalUrl}}{{else}}{{currentUrl}}{{/if}}">
+                                        <input type="hidden" name="returnTo"
+                                            value="{{#if @root.request.originalUrl}}{{@root.request.originalUrl}}{{else}}{{currentUrl}}{{/if}}">
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Nombre</label>
+                                            <input class="form-control" type="text" name="name"
+                                                placeholder="Ej: Notebooks" required>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="catActiveInModal"
+                                                name="active" checked>
+                                            <label class="form-check-label" for="catActiveInModal">Activa</label>
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-primary" type="submit">Crear</button>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                data-bs-dismiss="modal">Cerrar</button>
+                                        </div>
+
+                                        <div class="form-text mt-2">
+                                            Se recargará <strong>automáticamente</strong> este formulario.
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card">
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <span class="fw-semibold">Categorías activas</span>
+                                    <a class="btn btn-sm btn-outline-dark" href="/admin/categories" target="_blank"
+                                        rel="noopener">
+                                        Abrir gestor completo
+                                    </a>
+                                </div>
+                                <div class="card-body p-0">
+                                    {{#if categories.length}}
+                                    <div class="list-group list-group-flush">
+                                        {{#each categories}}
+                                        <div class="list-group-item d-flex align-items-center justify-content-between">
+                                            <div class="text-truncate me-2" title="{{name}}">{{name}}</div>
+                                            <code class="text-muted small">{{slug}}</code>
+                                        </div>
+                                        {{/each}}
+                                    </div>
+                                    {{else}}
+                                    <div class="p-3 text-muted">No hay categorías (aún).</div>
+                                    {{/if}}
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">
+                                        Para editar/eliminar/toggle usá el gestor completo.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- /row -->
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script nonce="{{cspNonce}}">
+    // Previsualización de la nueva imagen
+    (function () {
+        const input = document.getElementById('image');
+        const preview = document.getElementById('previewNew');
+        const ph = document.getElementById('previewPlaceholder');
+        if (!input || !preview || !ph) return;
+        input.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) {
+                preview.style.display = 'none';
+                ph.style.display = 'inline';
+                preview.src = '';
+                return;
+            }
+            const url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.style.display = 'block';
+            ph.style.display = 'none';
+        });
+    })();
+</script>
+<script nonce="{{cspNonce}}">
+    // UX: enfocar input dentro del modal al abrir
+    (function () {
+        const modal = document.getElementById('categoryModal');
+        if (!modal) return;
+        modal.addEventListener('shown.bs.modal', function () {
+            const inp = modal.querySelector('input[name="name"]');
+            if (inp) { try { inp.focus(); } catch { } }
+        });
+    })();
+</script>

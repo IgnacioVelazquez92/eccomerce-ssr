@@ -1,0 +1,90 @@
+{{!-- views/products/detail.hbs --}}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+            {{#if product.categoryName}}
+            <li class="breadcrumb-item">{{product.categoryName}}</li>
+            {{/if}}
+            <li class="breadcrumb-item active" aria-current="page">{{product.title}}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-6">
+            <div class="ratio ratio-4x3 bg-light rounded d-flex align-items-center justify-content-center">
+                {{#if product.imageUrl}}
+                <img src="{{product.imageUrl}}" class="img-fluid object-fit-contain p-3" alt="{{product.title}}">
+                {{else}}
+                <span class="text-muted">Sin imagen</span>
+                {{/if}}
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+                <h1 class="h3 mb-1">{{product.title}}</h1>
+                {{#if product.categoryName}}
+                <span class="badge bg-body-tertiary text-dark border">{{product.categoryName}}</span>
+                {{/if}}
+            </div>
+
+            {{#if product.sku}}
+            <div class="text-muted mb-2">SKU: <code>{{product.sku}}</code></div>
+            {{/if}}
+
+            <div class="mb-3">
+                {{#if product.hasPromo}}
+                <div class="d-flex align-items-baseline gap-2">
+                    <span class="h3 mb-0 fw-bold">{{currency product.promoPrice}}</span>
+                    <small class="text-muted text-decoration-line-through">{{currency product.price}}</small>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Promo</span>
+                </div>
+                {{else}}
+                <div class="h3 mb-0 fw-bold">{{currency product.price}}</div>
+                {{/if}}
+            </div>
+
+            {{#if product.stock}}
+            <form action="/cart/add/{{product._id}}" method="post" class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label for="qty" class="form-label mb-0 small text-muted">Cantidad</label>
+                    <input id="qty" type="number" name="qty" value="1" min="1" max="{{product.stock}}"
+                        class="form-control" style="max-width: 120px;">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Agregar al carrito</button>
+                </div>
+            </form>
+            <div class="text-muted small mt-2">Stock disponible: {{product.stock}}</div>
+            {{else}}
+            <div class="alert alert-secondary d-inline-flex align-items-center" role="alert">
+                Sin stock por el momento
+            </div>
+            {{/if}}
+
+            {{#if product.description}}
+            <hr class="my-4">
+            <h2 class="h6 mb-2">Descripción</h2>
+            <p class="mb-0">{{product.description}}</p>
+            {{/if}}
+
+            {{#if product.techSpecs.length}}
+            <hr class="my-4">
+            <h2 class="h6 mb-2">Ficha técnica</h2>
+            <ul class="list-group list-group-flush">
+                {{#each product.techSpecs}}
+                <li class="list-group-item">{{this}}</li>
+                {{/each}}
+            </ul>
+            {{/if}}
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <a href="/" class="btn btn-outline-secondary">Seguir comprando</a>
+                <a href="/cart" class="btn btn-outline-primary">Ver carrito</a>
+            </div>
+        </div>
+    </div>
+</div>

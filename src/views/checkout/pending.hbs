@@ -1,0 +1,65 @@
+{{!-- src/views/checkout/pending.hbs --}}
+{{!-- Vista: Pago pendiente (UX clara con estado temporal y opciones de seguimiento) --}}
+{{!-- Requiere variables: title, order, mp.{paymentId, preferenceId, status} --}}
+
+{{!< main}} <section class="container py-5" aria-labelledby="checkout-pending-title">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="text-center mb-4">
+                <div class="display-6" id="checkout-pending-title" role="status" aria-live="polite">⏳ Pago pendiente
+                </div>
+                <p class="text-muted mt-2">Estamos esperando la confirmación de tu pago. Esto puede demorar unos
+                    minutos.</p>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Estado del pedido</h2>
+
+                    {{#if order}}
+                    <dl class="row mb-0">
+                        <dt class="col-5 col-md-4">N° de orden</dt>
+                        <dd class="col-7 col-md-8">{{order._id}}</dd>
+
+                        <dt class="col-5 col-md-4">Total</dt>
+                        <dd class="col-7 col-md-8">${{order.total}}</dd>
+
+                        {{#if mp.paymentId}}
+                        <dt class="col-5 col-md-4">Pago (MP)</dt>
+                        <dd class="col-7 col-md-8">{{mp.paymentId}}</dd>
+                        {{/if}}
+                        {{#if mp.preferenceId}}
+                        <dt class="col-5 col-md-4">Preferencia</dt>
+                        <dd class="col-7 col-md-8">{{mp.preferenceId}}</dd>
+                        {{/if}}
+                        {{#if mp.status}}
+                        <dt class="col-5 col-md-4">Estado</dt>
+                        <dd class="col-7 col-md-8 text-warning fw-semibold">{{mp.status}}</dd>
+                        {{/if}}
+                    </dl>
+
+                    <div class="alert alert-warning mt-4 mb-0" role="alert">
+                        Si el pago no se confirma automáticamente, revisá <a href="/orders">Mis pedidos</a> en unos
+                        minutos.
+                    </div>
+                    {{else}}
+                    <div class="alert alert-info mb-0" role="alert">
+                        Registramos un pago pendiente pero no pudimos mostrar la orden. Revisá <a href="/orders">Mis
+                            pedidos</a>.
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <div class="d-grid d-sm-flex gap-2">
+                <a href="/orders" class="btn btn-primary btn-lg">Ver mis pedidos</a>
+                <a href="/catalog" class="btn btn-outline-secondary btn-lg">Volver al catálogo</a>
+            </div>
+
+            <p class="text-muted mt-3 mb-0 small">
+                También te notificaremos por email cuando el pago se confirme.
+            </p>
+        </div>
+    </div>
+    </section>

@@ -1,0 +1,290 @@
+{{!-- views/checkout/checkout.hbs --}}
+{{!-- Checkout: elección de entrega (retiro/envío), selección de dirección guardada y confirmación antes del pago.
+Reglas UX:
+- Desde aquí NO se crean direcciones con alerts/confirm: siempre con modal Bootstrap.
+- Si el usuario no tiene direcciones y elige "Envío a domicilio", se abre el modal automáticamente.
+- Si hay dirección por defecto (user.defaultAddressId), se preselecciona.
+--}}
+
+<div class="container py-4">
+    <h1 class="h4 mb-4">Checkout</h1>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <form id="checkout-form" action="/checkout" method="post" novalidate>
+                {{!-- Método de entrega --}}
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Método de entrega</div>
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="shippingMethod" id="ship-pickup"
+                                value="pickup" checked>
+                            <label class="form-check-label" for="ship-pickup">
+                                Retiro en local <span class="text-muted">(sin costo)</span>
+                            </label>
+                        </div>
+                        <div class="form-text mb-3">
+                            Podrás retirar tu pedido por nuestra sucursal principal. Recibirás indicaciones por email.
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="shippingMethod" id="ship-delivery"
+                                value="delivery">
+                            <label class="form-check-label" for="ship-delivery">
+                                Envío a domicilio <span class="text-muted">(tarifa plana $2.000)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {{!-- Dirección de entrega (solo visible si envío a domicilio) --}}
+                {{!-- Dirección de entrega (solo visible si envío a domicilio) --}}
+                <div id="delivery-block" class="card mb-4 d-none" aria-hidden="true">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Dirección de entrega</span>
+                        <div class="d-none d-sm-inline-flex gap-2">
+                            <a class="btn btn-sm btn-outline-secondary" href="/account/profile">Gestionar en "Mi
+                                cuenta"</a>
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#modalAddress">
+                                + Agregar dirección
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        {{#if addresses.length}}
+                        <fieldset id="addresses-list" class="vstack gap-2">
+                            {{#each addresses}}
+                            <div class="form-check border rounded p-2">
+                                <input class="form-check-input" type="radio" name="addressId" id="addr-{{this.id}}"
+                                    value="{{this.id}}" {{#if this.isDefault}}checked{{/if}}>
+                                <label class="form-check-label" for="addr-{{this.id}}">
+                                    <span class="fw-semibold">{{this.label}}</span>
+                                    <span class="text-muted">—</span>
+                                    {{this.line1}}
+                                    {{#if this.line2}} • {{this.line2}}{{/if}}
+                                    • {{this.city}}, {{this.state}} (CP {{this.zip}})
+                                    {{#if this.isDefault}}<span
+                                        class="badge text-bg-secondary ms-2">Preferida</span>{{/if}}
+                                </label>
+                            </div>
+                            {{/each}}
+                        </fieldset>
+
+                        <div class="d-sm-none mt-3 d-grid gap-2">
+                            <a class="btn btn-outline-secondary" href="/account/profile">Gestionar en "Mi cuenta"</a>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#modalAddress">
+                                + Agregar dirección
+                            </button>
+                        </div>
+                        {{else}}
+                        <div class="alert alert-info mb-3" role="alert">
+                            No tenés direcciones guardadas. Agregá una para poder recibir tu pedido a domicilio.
+                        </div>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#modalAddress">
+                            + Agregar dirección
+                        </button>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Resumen / Confirmación --}}
+                <div class="card">
+                    <div class="card-header fw-semibold">Confirmá tu compra</div>
+                    <div class="card-body">
+                        {{#if cart}}
+                        <ul class="list-group list-group-flush mb-3">
+                            {{#each cart.items}}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <div>
+                                    <div class="fw-semibold">{{title}}</div>
+                                    <small class="text-muted">x{{qty}} • {{currency price}} c/u</small>
+                                </div>
+                                <div class="fw-semibold">{{currency subtotal}}</div>
+                            </li>
+                            {{/each}}
+                        </ul>
+
+                        <dl class="row small mb-0">
+                            <dt class="col-6 text-muted">Ítems</dt>
+                            <dd class="col-6 text-end">{{cart.totalItems}}</dd>
+
+                            <dt class="col-6 text-muted">Subtotal</dt>
+                            <dd class="col-6 text-end">{{currency cart.subtotal}}</dd>
+
+                            <dt class="col-6 text-muted">Descuentos</dt>
+                            <dd class="col-6 text-end">{{currency cart.discount}}</dd>
+
+                            <div class="col-12">
+                                <hr>
+                            </div>
+
+                            <dt class="col-6 fw-semibold">Total (sin envío)</dt>
+                            <dd class="col-6 text-end fw-semibold h5 mb-0">{{currency cart.total}}</dd>
+
+                            <div id="shipping-hint" class="form-text mt-2 d-none">
+                                Al elegir <strong>Envío a domicilio</strong>, se agregará una tarifa plana de
+                                <strong>$2.000</strong> en el paso de pago.
+                            </div>
+                        </dl>
+                        {{else}}
+                        <div class="alert alert-info mb-0">
+                            Tu carrito está vacío. <a href="/catalog">Volver al catálogo</a>
+                        </div>
+                        {{/if}}
+                    </div>
+                    <div class="card-footer d-grid d-sm-flex gap-2">
+                        <a class="btn btn-outline-secondary" href="/cart">Volver al carrito</a>
+                        <button id="btn-pay" class="btn btn-primary ms-auto" type="submit">Ir a pagar</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="form-text mt-2">
+                Al continuar, aceptás nuestros <a href="/terms">Términos y Condiciones</a>.
+            </div>
+        </div>
+
+        {{!-- Columna lateral opcional: ayuda/beneficios --}}
+        <div class="col-12 col-lg-4">
+            <div class="card">
+                <div class="card-header fw-semibold">Ayuda rápida</div>
+                <div class="card-body small">
+                    <ul class="mb-0">
+                        <li>Pagos procesados de forma segura por Mercado Pago.</li>
+                        <li>Podrás hacer seguimiento desde <a href="/orders">Mis pedidos</a>.</li>
+                        <li>¿Dudas? <a href="/account/profile">Gestioná tus direcciones</a> o <a href="/help">contactá
+                                soporte</a>.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Modal Bootstrap: Crear nueva dirección (POST /account/profile/addresses) --}}
+<div class="modal fade" id="modalAddress" tabindex="-1" aria-labelledby="modalAddressLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" action="/account/profile/addresses" method="post" novalidate>
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAddressLabel">Nueva dirección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label" for="addr_label">Etiqueta (opcional)</label>
+                    <input type="text" class="form-control" id="addr_label" name="label"
+                        placeholder="Casa, Trabajo, etc.">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="addr_line1">Calle y número</label>
+                    <input required type="text" class="form-control" id="addr_line1" name="line1"
+                        placeholder="Ej: Av. Siempre Viva 742">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="addr_line2">Piso / Dpto (opcional)</label>
+                    <input type="text" class="form-control" id="addr_line2" name="line2"
+                        placeholder="Ej: Piso 3, Dpto B">
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label" for="addr_city">Ciudad</label>
+                        <input required type="text" class="form-control" id="addr_city" name="city"
+                            placeholder="San Miguel de Tucumán">
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label" for="addr_state">Provincia</label>
+                        <input required type="text" class="form-control" id="addr_state" name="state"
+                            placeholder="Tucumán">
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label" for="addr_zip">Código Postal</label>
+                        <input required type="text" class="form-control" id="addr_zip" name="zip" placeholder="4000">
+                    </div>
+                </div>
+
+                <div class="form-text mt-2">
+                    Podés gestionar todas tus direcciones luego en <a href="/account/profile">Mi cuenta</a>.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar dirección</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{!-- JS: toggle envío, validación de dirección seleccionada y apertura/modal si no hay direcciones --}}
+<script nonce="{{cspNonce}}">
+    (function () {
+        const form = document.getElementById('checkout-form');
+        const btn = document.getElementById('btn-pay');
+        const delivery = document.getElementById('ship-delivery');
+
+        // helper: serializar form como application/x-www-form-urlencoded
+        function toUrlEncoded(fd) {
+            return new URLSearchParams([...fd.entries()]);
+        }
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Validación rápida: si es envío, asegurar que haya addressId elegido
+            if (delivery.checked) {
+                const checked = document.querySelector('input[name="addressId"]:checked');
+                if (!checked) {
+                    // Abrimos el modal para forzar la carga/selección (si tenés el modal)
+                    const modalEl = document.getElementById('modalAddress');
+                    if (window.bootstrap && modalEl) {
+                        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                    }
+                    return;
+                }
+            }
+
+            btn.disabled = true; btn.innerText = 'Redirigiendo…';
+
+            try {
+                const fd = new FormData(form);
+                const body = toUrlEncoded(fd);
+
+                const r = await fetch('/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                    },
+                    body
+                });
+
+                if (!r.ok) {
+                    const err = await r.json().catch(() => ({}));
+                    throw new Error(err?.error || 'No se pudo iniciar el checkout');
+                }
+
+                const data = await r.json();
+                const target = data.init_point || data.sandbox_init_point;
+
+                if (!target) {
+                    throw new Error('Preferencia creada sin URL de pago');
+                }
+
+                // Redirección segura lado cliente (no la bloquea CSP)
+                window.location.href = target;
+            } catch (err) {
+                console.error('[checkout] redirect error:', err);
+                // Mostrá un toast/alert de Bootstrap si tenés uno; de momento, fallback mínimo:
+                alert(err.message || 'Error al redirigir al pago');
+            } finally {
+                btn.disabled = false; btn.innerText = 'Ir a pagar';
+            }
+        }, { passive: false });
+    })();
+</script>

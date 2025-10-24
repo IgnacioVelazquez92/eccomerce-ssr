@@ -1,0 +1,74 @@
+{{! views/auth/register.hbs }}
+{{! ---------------------------------------------------------------------- }}
+{{! Formulario de registro de usuario }}
+{{! - Campos: nombre, email, contraseña }}
+{{! - Bootstrap 5 centrado y simple }}
+{{! ---------------------------------------------------------------------- }}
+
+{{#> layouts/main title="Crear cuenta" }}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+
+                    <h4 class="mb-4 text-center">Crear cuenta</h4>
+
+                    {{#if errors._global}}
+                    <div class="alert alert-danger small">{{errors._global}}</div>
+                    {{/if}}
+
+                    <form method="POST" action="/register" novalidate>
+
+                        {{! Nombre }}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre completo</label>
+                            <input type="text" class="form-control {{#if errors.name}}is-invalid{{/if}}" id="name"
+                                name="name" placeholder="Ej. Juan Pérez" value="{{form.name}}" required />
+                            {{#if errors.name}}
+                            <div class="invalid-feedback">{{errors.name}}</div>
+                            {{/if}}
+                        </div>
+
+                        {{! Email }}
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control {{#if errors.email}}is-invalid{{/if}}" id="email"
+                                name="email" placeholder="usuario@dominio.com" value="{{form.email}}" required />
+                            {{#if errors.email}}
+                            <div class="invalid-feedback">{{errors.email}}</div>
+                            {{/if}}
+                        </div>
+
+                        {{! Password }}
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control {{#if errors.password}}is-invalid{{/if}}"
+                                id="password" name="password" placeholder="Mínimo 6 caracteres" required />
+                            {{#if errors.password}}
+                            <div class="invalid-feedback">{{errors.password}}</div>
+                            {{/if}}
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-success">
+                                Registrarme
+                            </button>
+                        </div>
+
+                        <div class="text-center small">
+                            ¿Ya tenés cuenta?
+                            <a href="/login">Iniciar sesión</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{{/layouts/main}}

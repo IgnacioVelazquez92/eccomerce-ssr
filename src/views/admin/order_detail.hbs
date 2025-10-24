@@ -1,0 +1,182 @@
+{{!-- views/admin/order_detail.hbs --}}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="h3 mb-0">Pedido #{{order._id}}</h1>
+        <div>
+            <a href="/admin/orders" class="btn btn-outline-secondary">← Volver</a>
+        </div>
+    </div>
+
+    {{!-- Cabecera con estado y fechas --}}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Estado</div>
+                    {{!-- Badge con color según estado usando helper tern + eq --}}
+                    {{#if (eq order.status "approved")}}
+                    <span class="badge bg-success text-uppercase">{{order.status}}</span>
+                    {{else if (eq order.status "pending")}}
+                    <span class="badge bg-warning text-dark text-uppercase">{{order.status}}</span>
+                    {{else if (eq order.status "rejected")}}
+                    <span class="badge bg-danger text-uppercase">{{order.status}}</span>
+                    {{else}}
+                    <span class="badge bg-secondary text-uppercase">{{order.status}}</span>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Creado</div>
+                    <div>{{dateTime order.createdAt}}</div>
+                </div>
+            </div>
+        </div>
+
+        {{#if order.updatedAt}}
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Actualizado</div>
+                    <div>{{dateTime order.updatedAt}}</div>
+                </div>
+            </div>
+        </div>
+        {{/if}}
+
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Cliente</div>
+                    <div class="small">{{def order.userId "—"}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- Totales y envío --}}
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Resumen</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Subtotal</span>
+                        <strong>{{currency order.subtotal}}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Descuento</span>
+                        <strong>{{currency order.discount}}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Envío</span>
+                        <strong>{{currency order.shippingFee}}</strong>
+                    </div>
+                    <hr class="my-2" />
+                    <div class="d-flex justify-content-between fs-5">
+                        <span>Total</span>
+                        <strong>{{currency order.total}}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Envío</div>
+                <div class="card-body">
+                    <div class="mb-1">
+                        <span class="text-muted small d-block">Método</span>
+                        <strong class="text-uppercase">{{def order.shippingMethod "—"}}</strong>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-muted small d-block">Dirección (ID)</span>
+                        <div class="small">{{def order.shippingAddressId "—"}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">Mercado Pago</div>
+                <div class="card-body">
+                    <div class="mb-1">
+                        <span class="text-muted small d-block">Preference ID</span>
+                        <code class="small">{{def order.mpPreferenceId "—"}}</code>
+                    </div>
+                    <div class="mb-1">
+                        <span class="text-muted small d-block">Payment ID</span>
+                        <code class="small">{{def order.mpPaymentId "—"}}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- Items del pedido --}}
+    <div class="card mb-4">
+        <div class="card-header">Items</div>
+        <div class="card-body p-0">
+            {{#if order.items.length}}
+            <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each order.items}}
+                        <tr>
+                            <td class="small">{{@index}}</td>
+                            <td>
+                                <div class="fw-semibold">{{def title "—"}}</div>
+                                <div class="text-muted small">ID: {{def productId "—"}}</div>
+                            </td>
+                            <td class="text-end">{{currency price}}</td>
+                            <td class="text-end">{{qty}}</td>
+                            <td class="text-end">{{currency subtotal}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="p-3 text-muted">Sin items.</div>
+            {{/if}}
+        </div>
+    </div>
+
+    {{!-- Cambio de estado (opcional) --}}
+    <div class="card mb-4">
+        <div class="card-header">Actualizar estado</div>
+        <div class="card-body">
+            <form action="/admin/orders/{{order._id}}/status" method="post" class="row gy-2 gx-3 align-items-center">
+                <div class="col-sm-4">
+                    <label for="status" class="form-label">Nuevo estado</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="created" {{#if (eq order.status "created" )}}selected{{/if}}>Creado</option>
+                        <option value="approved" {{#if (eq order.status "approved" )}}selected{{/if}}>Aprobado</option>
+                        <option value="pending" {{#if (eq order.status "pending" )}}selected{{/if}}>Pendiente</option>
+                        <option value="rejected" {{#if (eq order.status "rejected" )}}selected{{/if}}>Rechazado</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="/admin/orders" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>

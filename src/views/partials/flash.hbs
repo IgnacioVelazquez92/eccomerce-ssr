@@ -1,0 +1,39 @@
+{{!-- views/partials/flash.hbs --}}
+{{!--
+Mensajes flash genéricos.
+Espera un objeto "flash" con arrays opcionales:
+flash.success[], flash.error[], flash.info[]
+Ejemplo desde un controlador:
+res.render('vista', { flash: { success: ['Guardado OK'] } })
+--}}
+
+{{#if flash}}
+<div class="my-3">
+    {{#if flash.success}}
+    {{#each flash.success}}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{this}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {{/each}}
+    {{/if}}
+
+    {{#if flash.error}}
+    {{#each flash.error}}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{this}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {{/each}}
+    {{/if}}
+
+    {{#if flash.info}}
+    {{#each flash.info}}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{this}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {{/each}}
+    {{/if}}
+</div>
+{{/if}}

@@ -1,0 +1,42 @@
+<div class="card h-100 shadow-sm">
+    <div class="ratio ratio-4x3 bg-light">
+        {{#if imageUrl}}
+        <img src="{{imageUrl}}" class="card-img-top object-fit-contain p-2" alt="{{title}}">
+        {{else}}
+        <div class="d-flex align-items-center justify-content-center text-muted">Sin imagen</div>
+        {{/if}}
+    </div>
+
+    <div class="card-body d-flex flex-column">
+        <h3 class="h6 card-title text-truncate mb-2" title="{{title}}">{{title}}</h3>
+
+        <div class="mb-2">
+            {{#if hasPromo}}
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="h5 mb-0 fw-bold">{{currency promoPrice}}</span>
+                <small class="text-muted text-decoration-line-through">{{currency price}}</small>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Promo</span>
+            </div>
+            {{else}}
+            <div class="h5 mb-0 fw-bold">{{currency price}}</div>
+            {{/if}}
+            {{#if sku}}
+            <div class="text-muted small">SKU: {{sku}}</div>
+            {{/if}}
+        </div>
+
+        <div class="mt-auto d-grid gap-2">
+            <a href="/products/{{_id}}" class="btn btn-outline-secondary btn-sm">Ver detalle</a>
+
+            {{#if stock}}
+            <form action="/cart/add/{{_id}}" method="post" class="d-flex gap-2">
+                <input type="number" name="qty" class="form-control form-control-sm" value="1" min="1" max="{{stock}}"
+                    aria-label="Cantidad" />
+                <button class="btn btn-primary btn-sm flex-shrink-0" type="submit">Agregar</button>
+            </form>
+            {{else}}
+            <button class="btn btn-secondary btn-sm" type="button" disabled>Sin stock</button>
+            {{/if}}
+        </div>
+    </div>
+</div>

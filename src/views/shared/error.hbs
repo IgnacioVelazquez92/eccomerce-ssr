@@ -1,0 +1,18 @@
+{{!-- views/shared/error.hbs --}}
+{{#> layouts/main title=(or title "Error") }}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading mb-3">{{title}}</h4>
+                <p class="mb-1">{{message}}</p>
+                {{#if error}}<p class="text-muted small mb-0">Código: {{error}}</p>{{/if}}
+                {{#if stack}}
+                <pre class="mt-3 small">{{stack}}</pre>
+                {{/if}}
+            </div>
+            <a class="btn btn-outline-secondary" href="/">Volver al inicio</a>
+        </div>
+    </div>
+</div>
+{{/layouts/main}}

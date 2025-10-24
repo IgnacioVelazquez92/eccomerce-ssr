@@ -1,0 +1,47 @@
+{{!-- views/layouts/main.hbs --}}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{#if title}}{{title}} | {{/if}}E-commerce</title>
+
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+    <link rel="icon" type="image/png" href="/img/logo.png" />
+    {{!-- 1. Enlace de Animate.css (Verificado) --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    {{!-- 2. Enlace de Bootstrap Icons (Fuente alternativa: unpkg.com) --}}
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+
+<body class="min-vh-100">
+    <div class="container-fluid g-0">
+        <div class="row g-0 min-vh-100">
+            {{#if showSidebar}}
+            {{!-- Sidebar: offcanvas en mobile + columna fija sticky en desktop --}}
+            {{> sidebar}}
+            {{/if}}
+
+            {{!-- Columna principal: navbar sticky + contenido + footer --}}
+            <div class="{{#if showSidebar}}col-12 col-lg-9 col-xl-10{{else}}col-12{{/if}}">
+                <div class="sticky-top">
+                    {{> navbar}}
+                </div>
+
+                <main class="container-fluid py-3">
+                    {{> flash}}
+                    {{{body}}}
+                </main>
+
+                {{> footer}}
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+
+</html>

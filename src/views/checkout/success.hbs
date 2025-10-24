@@ -1,0 +1,75 @@
+{{!-- src/views/checkout/success.hbs --}}
+{{!-- Vista: Pago aprobado (UX centrada en confirmación, próximos pasos y resumen) --}}
+{{!-- Requiere variables: title, order, mp.{paymentId, preferenceId, status} --}}
+
+{{!< main}} {{!-- Si usás express-handlebars con layouts, asegura layout "main" configurado --}} <section
+    class="container py-5" aria-labelledby="checkout-success-title">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="text-center mb-4">
+                <div class="display-6" id="checkout-success-title" role="status" aria-live="polite">✅ ¡Pago aprobado!
+                </div>
+                <p class="text-muted mt-2">Tu pedido fue confirmado y está siendo procesado.</p>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Resumen de tu orden</h2>
+
+                    {{#if order}}
+                    <dl class="row mb-0">
+                        <dt class="col-5 col-md-4">N° de orden</dt>
+                        <dd class="col-7 col-md-8">{{order._id}}</dd>
+
+                        <dt class="col-5 col-md-4">Total</dt>
+                        <dd class="col-7 col-md-8">${{order.total}}</dd>
+
+                        <dt class="col-5 col-md-4">Fecha</dt>
+                        <dd class="col-7 col-md-8">{{order.createdAt}}</dd>
+
+                        {{#if mp.paymentId}}
+                        <dt class="col-5 col-md-4">Pago (MP)</dt>
+                        <dd class="col-7 col-md-8">{{mp.paymentId}}</dd>
+                        {{/if}}
+                        {{#if mp.preferenceId}}
+                        <dt class="col-5 col-md-4">Preferencia</dt>
+                        <dd class="col-7 col-md-8">{{mp.preferenceId}}</dd>
+                        {{/if}}
+                    </dl>
+
+                    <hr class="my-4" />
+
+                    <div>
+                        <h3 class="h6 mb-3">Productos</h3>
+                        <ul class="list-group list-group-flush">
+                            {{#each order.items}}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">{{this.title}}</div>
+                                    <small class="text-muted">x{{this.qty}} • ${{this.price}} c/u</small>
+                                </div>
+                                <div class="fw-semibold">${{this.subtotal}}</div>
+                            </li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                    {{else}}
+                    <div class="alert alert-info mb-0" role="alert">
+                        No pudimos mostrar el detalle de la orden, pero el pago fue aprobado.
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <div class="d-grid d-sm-flex gap-2">
+                <a href="/orders" class="btn btn-primary btn-lg">Ver mis pedidos</a>
+                <a href="/catalog" class="btn btn-outline-secondary btn-lg">Seguir comprando</a>
+            </div>
+
+            <p class="text-muted mt-3 mb-0 small">
+                Te enviamos un correo con la confirmación. Si necesitás ayuda, <a href="/help">contactá soporte</a>.
+            </p>
+        </div>
+    </div>
+    </section>
