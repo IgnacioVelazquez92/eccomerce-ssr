@@ -57,9 +57,6 @@ app.use((req, res, next) => {
 // ---------------------------------------------------------------------------
 // Seguridad: Helmet con CSP que habilita Cloudinary y blob: (preview)
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Seguridad: Helmet con CSP que habilita Cloudinary y blob: (preview)
-// ---------------------------------------------------------------------------
 app.use(
   helmet({
     contentSecurityPolicy: {
