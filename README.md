@@ -1566,3 +1566,5 @@ graph LR
 - **Módulo 5:** lee pedidos reales para calcular KPIs.
 
 ---
+
+![crear web en render](readme_assets/image.png)

@@ -4,6 +4,9 @@
   "description": "**Objetivo:** armar un e-commerce académico, entendible y desplegable rápido.  \r **Tecnologías:** Node.js (Express), Handlebars, Bootstrap 5, MongoDB Atlas (Mongoose), Mercado Pago (sandbox), Cloudinary (imágenes), Sessions (connect-mongo), bcrypt, dotenv, morgan, helmet.",
   "type": "module",
   "main": "src/server/server.js",
+  "engines": {
+    "node": ">=18.18.0 <19.0.0"
+  },
   "scripts": {
     "dev": "nodemon src/server/server.js",
     "start": "node src/server/server.js",
