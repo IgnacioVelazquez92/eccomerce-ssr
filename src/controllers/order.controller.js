@@ -1,12 +1,15 @@
 // src/controllers/order.controller.js
-// Controlador de Checkout con Mercado Pago (Checkout Pro).
+// Controlador de Checkout con Mercado Pago (Checkout Pro) con idempotencia.
+// - Crea/REUSA a lo sumo 1 Order "created" por usuario y carrito (cartHash).
+// - Evita multiplicar órdenes "created" cada vez que se prueba el checkout.
 //
 // Soporta:
 // - FORM HTML (POST clásico): 303 Location → MP
-// - FETCH/AJAX (Accept: application/json): JSON con { init_point, sandbox_init_point, url }
+// - FETCH/AJAX (Accept: application/json): JSON { url, init_point, sandbox_init_point, ... }
 //
 // En dev usa sandbox; en prod usa init_point.
 
+import crypto from 'crypto';
 import Order from '../models/Order.js';
 import { createPreference } from '../services/mp.service.js';
 
@@ -29,8 +32,22 @@ function getMpReturnParams(req) {
   };
 }
 
-/** Crea la orden "snapshot" con totales congelados a partir del carrito en sesión */
-async function createOrderFromCart({ userId, cart, body }) {
+/** Firma estable del carrito + envío para detectar cambios */
+function computeCartHash({ cart, shippingMethod, shippingFee }) {
+  const payload = {
+    items: (cart.items || []).map((i) => ({
+      productId: i.productId || null,
+      title: i.title,
+      price: Number(i.price) || 0,
+      qty: Number(i.qty) || 0,
+    })),
+  };
+  const json = JSON.stringify({ payload, shippingMethod, shippingFee });
+  return crypto.createHash('sha256').update(json).digest('hex');
+}
+
+/** Crea o reutiliza una orden "created" según el cartHash (idempotencia) */
+async function getOrCreateOrderFromCart({ userId, cart, body }) {
   const shippingMethod = body?.shippingMethod === 'delivery' ? 'delivery' : 'pickup';
   const shippingFee = shippingMethod === 'delivery' ? 2000 : 0;
 
@@ -42,7 +59,7 @@ async function createOrderFromCart({ userId, cart, body }) {
       title: i.title,
       price,
       qty,
-      subtotal: Number((price * qty).toFixed(2)), // ← requerido por tu esquema
+      subtotal: Number((price * qty).toFixed(2)),
     };
   });
 
@@ -53,19 +70,62 @@ async function createOrderFromCart({ userId, cart, body }) {
   const baseTotal = Number((cart.total ?? subtotal - discount).toFixed(2));
   const total = Number((baseTotal + shippingFee).toFixed(2));
 
+  // 1) Firmar carrito actual
+  const cartHash = computeCartHash({ cart, shippingMethod, shippingFee });
+
+  // 2) Buscar "created" más reciente del usuario
+  const now = new Date();
+  let open = await Order.findOne({ userId, status: 'created' }).sort({ createdAt: -1 });
+
+  const isExpired = open?.expiresAt ? open.expiresAt <= now : false;
+
+  // 3) Si existe, no venció y coincide cartHash → REUSAR (incrementa intentos)
+  if (open && !isExpired && open.cartHash === cartHash) {
+    open.attemptCount = (open.attemptCount || 0) + 1;
+    open.lastAttemptAt = now;
+    // opcional: refrescar snapshot/totales si los recalculaste
+    open.subtotal = subtotal;
+    open.discount = discount;
+    open.shippingFee = shippingFee;
+    open.shippingMethod = shippingMethod;
+    open.shippingAddressId = body?.addressId || body?.shippingAddressId || null;
+    open.total = total;
+    open.items = items;
+    await open.save();
+    return { order: open, shippingMethod, shippingFee, cartHash };
+  }
+
+  // 4) Si había una "created" pero cambió el carrito o venció → marcarla
+  if (open && (isExpired || open.cartHash !== cartHash)) {
+    try {
+      open.status = isExpired ? 'expired' : 'abandoned';
+      await open.save();
+    } catch (e) {
+      // si aún no agregaste esos estados en el schema, simplemente seguí
+    }
+  }
+
+  // 5) Crear nueva "created" con expiración (24h) e intentos en 0
+  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const order = await Order.create({
     userId,
+    items,
     subtotal,
     discount,
-    shippingFee,
-    shippingMethod,
-    shippingAddressId: body?.addressId || body?.shippingAddressId || null,
     total,
-    items,
     status: 'created',
+    // extras para idempotencia y métricas
+    cartHash,
+    attemptCount: 0,
+    lastAttemptAt: now,
+    expiresAt,
+    // envío
+    shippingMethod,
+    shippingFee,
+    shippingAddressId: body?.addressId || body?.shippingAddressId || null,
   });
 
-  return { order, shippingMethod, shippingFee };
+  return { order, shippingMethod, shippingFee, cartHash };
 }
 
 /** Actualiza campos de MP y/o estado en la orden */
@@ -76,12 +136,12 @@ async function updateOrderMpFields(orderId, patch) {
 /**
  * POST /checkout
  * - Valida sesión y carrito
- * - Crea Order (snapshot)
+ * - REUSA o crea Order (idempotente por cartHash)
  * - Crea Preferencia en MP (external_reference = order._id)
  * - Guarda mpPreferenceId
- * - Devuelve:
- *   • FORM HTML → 303 Location (MP)
- *   • FETCH/AJAX → JSON { init_point, sandbox_init_point, url, orderId, preferenceId }
+ * - Responde:
+ *   • FORM → 303 Location a MP
+ *   • AJAX → JSON { url, init_point, sandbox_init_point, orderId, preferenceId }
  */
 export async function postCheckout(req, res, next) {
   try {
@@ -99,10 +159,14 @@ export async function postCheckout(req, res, next) {
         : res.redirect('/cart');
     }
 
-    // 1) Crear Order
-    const { order, shippingMethod } = await createOrderFromCart({ userId, cart, body: req.body });
+    // 1) Obtener o crear Order idempotente
+    const { order, shippingMethod } = await getOrCreateOrderFromCart({
+      userId,
+      cart,
+      body: req.body,
+    });
 
-    // 2) Crear preferencia en MP
+    // 2) Crear preferencia en MP (external_reference = orderId)
     const pref = await createPreference(cart, order._id.toString());
 
     // 3) Persistir mpPreferenceId + externalReference
@@ -111,7 +175,7 @@ export async function postCheckout(req, res, next) {
       externalReference: String(order._id),
     });
 
-    // 4) Elegir URL de destino (sandbox en dev, init_point en prod)
+    // 4) URL de destino (sandbox en dev, init_point en prod)
     const isProd = process.env.NODE_ENV === 'production';
     const url = isProd ? pref.init_point : pref.sandbox_init_point || pref.init_point;
 
@@ -126,14 +190,13 @@ export async function postCheckout(req, res, next) {
     console.log('[checkout][POST] redirect to:', url);
 
     if (isAjax) {
-      // Devolvemos las 3 variantes para compatibilidad con tu front actual
       res.set('Vary', 'Accept');
       return res.status(201).json({
         orderId: order._id,
         preferenceId: pref.id,
         init_point: pref.init_point,
         sandbox_init_point: pref.sandbox_init_point,
-        url, // por si luego querés usar un único campo
+        url,
         env: isProd ? 'production' : 'development',
       });
     }
@@ -159,7 +222,7 @@ export async function postCheckout(req, res, next) {
   }
 }
 
-/** GET /checkout/success — marca approved si aplica */
+/** GET /checkout/success — marca approved si aplica y limpia carrito */
 export async function getCheckoutSuccess(req, res) {
   const { paymentId, status, preferenceId, externalReference } = getMpReturnParams(req);
   try {

@@ -273,7 +273,7 @@ sequenceDiagram
 | **3. Catálogo y Carrito** | Productos activos + sesión     | usa datos del módulo 2           |
 | **4. Checkout (MP)**      | Pagos sandbox                  | usa órdenes y productos          |
 | **5. Admin Dashboard**    | KPIs + pedidos                 | consolida todo                   |
-| **6. Seeds y Deploy**     | Datos demo + Render            | inicialización                   |
+| **6. Deploy**             | Datos demo + Render            | inicialización                   |
 
 ---
 
@@ -1442,22 +1442,17 @@ erDiagram
 
 ---
 
-### MÓDULO 6 — Seeds, Scripts y Entrega (Deploy en Render)
+### MÓDULO 6 — Scripts y Entrega (Deploy en Render)
 
 **Responsable:** _pendiente_  
-**Alcance general:** generar la **semilla de datos** (admin + productos demo), definir **scripts npm mínimos** para ejecutar el proyecto y documentar una **guía corta de despliegue en Render**.
+**Alcance general:** definir los **scripts npm mínimos** de ejecución y documentar una **guía didáctica de despliegue** en Render (versión gratuita).
 
 ---
 
 #### 🧱 Responsabilidad general
 
-Dejar el proyecto **listo para probar en 5 minutos** mediante:
-
-- Base de datos con **datos iniciales** (1 admin y ~10–12 productos demo).
-- Scripts `npm` básicos (`dev`, `start`, `seed`).
-- Archivo `.env.example` **completo** para clonar, configurar y desplegar.
-
-> Este es el último módulo operativo. No modifica controladores ni vistas, solo prepara datos y configuración.
+Este módulo tiene un único propósito: dejar el proyecto **listo para desplegar y probar en la nube**.  
+No agrega nuevas funciones ni modifica controladores o vistas: solo prepara la ejecución final del sistema.
 
 ---
 
@@ -1465,14 +1460,11 @@ Dejar el proyecto **listo para probar en 5 minutos** mediante:
 
 ```
 ecommerce/
-├─ package.json                 # Scripts: dev, start, seed
-├─ .env.example                 # Inventario completo de variables
-└─ seed/
-   └─ seed.js                   # Carga admin + productos demo (idempotente)
+├─ package.json                 # Scripts básicos
+├─ .env.example                 # Variables necesarias para correr el proyecto
+└─ src/
+   └─ server/server.js          # Punto de entrada de la aplicación
 ```
-
-> Este módulo **no toca controladores ni vistas**.  
-> Solo garantiza que el entorno de ejecución y los datos base estén disponibles.
 
 ---
 
@@ -1480,93 +1472,121 @@ ecommerce/
 
 - `"dev": "nodemon src/server/server.js"`
 - `"start": "node src/server/server.js"`
-- `"seed": "node seed/seed.js"`
 
-> `seed.js` debe ser **idempotente**, es decir, poder ejecutarse varias veces sin duplicar datos (por ejemplo, usando `upsert` según `email` y `sku`).
-
----
-
-#### 🌱 Contenido de la semilla
-
-- **Usuario admin:** `admin@demo.test / 123456`  
-  (`role: "admin"`, `active: true`)
-- **Productos demo:** 10–12 ítems con `active:true`, algunos `featured`, con `imageUrl`.
-  - Si Cloudinary **no está configurado**, usar imágenes locales o placeholders (`https://via.placeholder.com/...`).
-- **Opcional:** incluir un par de productos con `promoEnabled/promoPct` para probar descuentos.
-
-> La semilla es totalmente funcional sin conexión a Cloudinary (usa imágenes de respaldo).
+> El comando `npm start` es el que Render ejecuta automáticamente al iniciar el servicio.
 
 ---
 
-#### 🔐 .env.example (inventario final)
+#### 🔐 Variables de entorno necesarias (.env.example)
 
 ```
 # Core
 PORT=3000
 NODE_ENV=development
-MONGO_URI="mongodb+srv://user:pass@cluster/dbname"
-SESSION_SECRET="cambia-esto"
+MONGO_URI="mongodb+srv://.."
+SESSION_SECRET="clave-secreta"
 
 # Mercado Pago (sandbox)
 MP_PUBLIC_KEY="TEST-..."
 MP_ACCESS_TOKEN="TEST-..."
-BASE_URL="http://localhost:3000"   # en Render será la URL pública
+BASE_URL="http://localhost:3000"   # En Render será la URL pública
 
-# Cloudinary
+# Cloudinary (opcional)
 CLOUDINARY_CLOUD_NAME="..."
 CLOUDINARY_API_KEY="..."
 CLOUDINARY_API_SECRET="..."
-
-# Nodemailer (SMTP de tu preferencia)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="..."
-SMTP_PASS="..."
-DEFAULT_FROM="Ecommerce Demo <no-reply@demo.test>"
 ```
 
-> En **Render**, asegurarse de configurar **todas** estas variables en la sección **Environment**.
+> En **Render**, todas estas variables deben configurarse manualmente en la pestaña **Environment** del servicio.
 
 ---
 
-#### 🚀 Deploy corto en Render (paso a paso)
+#### 🚀 Guía de despliegue en Render
 
-1. **Conectar el repositorio GitHub** → _New Web Service_.
-2. **Runtime:** Node 18+
-3. **Root Directory:** `/` (raíz del proyecto)
-4. **Build Command:** _(vacío o)_ `npm install`
-5. **Start Command:** `npm start`
-6. **Environment:** copiar las variables desde `.env.example` con valores reales
-7. **PORT:** Render la detecta automáticamente
-8. **MongoDB Atlas:** permitir IPs de Render en la allowlist
-9. **Mercado Pago back_urls:** usar la URL pública de Render como `BASE_URL`
-
-> Render no requiere pasos adicionales de build ni configuración de CI/CD.
+A continuación se detalla el proceso paso a paso para poner el proyecto online usando **Render Free Tier**.
 
 ---
 
-#### 🔄 Flujo mínimo de despliegue
+#### 1️⃣ Crear el servicio
+
+1. Ir a [https://render.com](https://render.com)
+2. Hacer clic en **New → Web Service**
+3. Conectar el repositorio de **GitHub**
+4. Elegir:
+   - **Runtime:** Node
+   - **Branch:** main
+   - **Root Directory:** `/`
+   - **Build Command:** `npm ci` (o `npm install`)
+   - **Start Command:** `npm start`
+
+![alt text](readme_assets/crear_servicio.png)
+
+---
+
+#### 2️⃣ Configurar variables de entorno
+
+Una vez creado el servicio, ir a la pestaña **Environment** y agregar:
+
+| Variable          | Ejemplo                                                         |
+| ----------------- | --------------------------------------------------------------- |
+| `NODE_ENV`        | `production`                                                    |
+| `PORT`            | `3000` _(Render la asigna automáticamente, pero puede dejarse)_ |
+| `BASE_URL`        | `https://tu-app.onrender.com`                                   |
+| `MONGO_URI`       | URI de tu base de datos Atlas (usar `mongodb+srv://...`)        |
+| `SESSION_SECRET`  | cadena segura                                                   |
+| `MP_PUBLIC_KEY`   | clave pública de Mercado Pago                                   |
+| `MP_ACCESS_TOKEN` | token de acceso de prueba                                       |
+| `NODE_OPTIONS`    | `--tls-min-v1.2 --tls-max-v1.2` _(para evitar errores SSL)_     |
+
+![alt text](readme_assets/configuracio_render.png)
+
+> 🔸 Asegúrate de que en **MongoDB Atlas → Network Access** tengas **0.0.0.0/0 (Allow from anywhere)** para que Render pueda conectarse.
+
+---
+
+#### 3️⃣ Deploy automático
+
+Render descargará el repositorio, instalará dependencias y ejecutará `npm start`.  
+En los logs deberías ver:
+
+```
+[DB] ✅ Conectado a MongoDB Atlas
+🚀 Server listening on http://0.0.0.0:10000 (production)
+```
+
+Si todo está correcto, el estado cambiará a **“Live”** y podrás abrir la app desde la URL pública:
+
+![alt text](readme_assets/render_corriendo.png)
+
+---
+
+#### 4️⃣ Consideraciones finales
+
+- La app se duerme automáticamente después de inactividad (free tier).
+- Al despertar, puede tardar unos segundos en volver a responder.
+- Para actualizaciones, basta con hacer **push a main** → Render redeploya automáticamente.
+- En caso de error, usar **Manual Deploy → Clear build cache & Redeploy latest commit**.
+
+---
+
+#### 🔄 Flujo de despliegue resumido
 
 ```mermaid
 graph LR
-  A["Repo GitHub"] --> B["Render: Deploy Web Service"]
-  B --> C["Setear ENV (Mongo, MP, Cloudinary, SMTP)"]
-  C --> D["npm start en Render"]
-  D --> E["App online (demo funcional)"]
+  A["Repositorio en GitHub"] --> B["Render: Crear servicio web"]
+  B --> C["Configurar variables (.env)"]
+  C --> D["Deploy automático (npm start)"]
+  D --> E["Aplicación online"]
 ```
 
 ---
 
-#### 🔗 Interacciones con otros módulos
+#### ✅ Resultado esperado
 
-- **Módulo 1:** crea el usuario administrador y valida sesiones.
-- **Módulo 2:** provee productos demo para CRUD y catálogo.
-- **Módulo 3:** usa los productos seed en el catálogo y carrito.
-- **Módulo 4:** valida checkout con `BASE_URL` y credenciales de MP.
-- **Módulo 5:** lee pedidos reales para calcular KPIs.
+- App online accesible desde `https://eccomerce-ssr.onrender.com/`
+- Conexión estable a MongoDB Atlas
+- Checkout de Mercado Pago funcionando en sandbox
+- Cloudinary configurado o imágenes por placeholder
+- Proyecto funcional y desplegable sin pasos manuales extra
 
----
-
-![crear web en render](readme_assets/image.png)
-
-![alt text](image.png)
+> Con esta configuración, el e-commerce puede probarse o presentarse fácilmente en un entorno público, replicando las condiciones reales de producción.

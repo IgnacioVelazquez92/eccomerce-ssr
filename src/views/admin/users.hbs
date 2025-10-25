@@ -38,7 +38,7 @@
                     <td>{{this.name}}</td>
                     <td>{{this.email}}</td>
                     <td>
-                        <form class="d-flex gap-2" method="POST" action="/admin/users/{{this.id}}/update">
+                        <form class="d-flex gap-2" method="POST" action="/admin/users/{{this._id}}/update">
                             <input type="hidden" name="name" value="{{this.name}}">
                             <select class="form-select form-select-sm" name="role" style="max-width:150px">
                                 <option value="user" {{#if (eq this.role "user" )}}selected{{/if}}>user</option>
