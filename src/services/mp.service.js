@@ -54,16 +54,20 @@ console.log('[mp.service] START — IS_LOCAL       =', IS_LOCAL);
  * @param {Object} it - Ítem del carrito en sesión.
  * @param {string|number} it.productId
  * @param {string} it.title
- * @param {number} it.price
+ * @param {number} it.price        // precio base
+ * @param {number} [it.promoPrice] // precio con promo (si aplica)
  * @param {number} it.qty
- * @param {boolean} [it.promoApplied]
  * @returns {import("mercadopago/dist/clients/commonTypes").PreferenceItem}
  * @throws {{ code: string, message: string }}
  */
 function mapCartItemToMP(it) {
   const title = (it?.title ?? '').toString().trim();
   const qty = Number(it?.qty ?? 1);
-  const unit = Number(it?.price);
+
+  // ⚠️ Usar SIEMPRE el precio final (con promo si existe)
+  const unit = Number(
+    it?.promoPrice != null && !Number.isNaN(Number(it.promoPrice)) ? it.promoPrice : it?.price,
+  );
 
   if (!title) {
     throw { code: 'INVALID_ITEM_TITLE', message: `Falta título en ítem: ${JSON.stringify(it)}` };
@@ -76,12 +80,12 @@ function mapCartItemToMP(it) {
   }
 
   return {
-    id: String(it.productId ?? ''), // opcional
+    id: String(it.productId ?? ''),
     title,
-    description: it.promoApplied ? 'Promo aplicada' : '',
+    description: it?.promoPrice != null && it.promoPrice < it.price ? 'Promo aplicada' : '',
     quantity: qty,
-    currency_id: 'ARS', // ajustar si necesitas otra moneda
-    unit_price: unit,
+    currency_id: 'ARS',
+    unit_price: unit, // ← precio final que verá MP
   };
 }
 
@@ -89,7 +93,7 @@ function mapCartItemToMP(it) {
  * Crea una Preferencia de Checkout Pro a partir del carrito activo.
  *
  * @param {Object} cart - Carrito en sesión (`req.session.cart`).
- * @param {Array} cart.items - [{ productId, title, price, qty, promoApplied }]
+ * @param {Array} cart.items - [{ productId, title, price, promoPrice, qty }]
  * @param {string|number} orderId - ID de la orden en Mongo (external_reference).
  * @returns {Promise<{ id: string, init_point: string, sandbox_init_point?: string }>}
  */
@@ -102,8 +106,45 @@ export async function createPreference(cart, orderId) {
     throw { code: 'MISSING_ORDER_ID', message: 'Falta orderId para external_reference.' };
   }
 
-  // --- Mapeo de ítems ---
-  const items = cart.items.map(mapCartItemToMP);
+  // --- Mapeo de ítems (usar SIEMPRE precio final: promoPrice si existe, sino price) ---
+  const items = cart.items.map((it) => {
+    const title = (it?.title ?? '').toString().trim();
+    const qty = Number(it?.qty ?? 1);
+    const unit = Number(
+      it?.promoPrice != null && !Number.isNaN(Number(it.promoPrice)) ? it.promoPrice : it?.price,
+    );
+
+    if (!title) {
+      throw { code: 'INVALID_ITEM_TITLE', message: `Falta título en ítem: ${JSON.stringify(it)}` };
+    }
+    if (Number.isNaN(unit) || unit <= 0) {
+      throw {
+        code: 'INVALID_ITEM_PRICE',
+        message: `Precio inválido en ítem: ${JSON.stringify(it)}`,
+      };
+    }
+    if (Number.isNaN(qty) || qty <= 0) {
+      throw {
+        code: 'INVALID_ITEM_QTY',
+        message: `Cantidad inválida en ítem: ${JSON.stringify(it)}`,
+      };
+    }
+
+    return {
+      id: String(it.productId ?? ''),
+      title,
+      description: it?.promoPrice != null && it.promoPrice < it.price ? 'Promo aplicada' : '',
+      quantity: qty,
+      currency_id: 'ARS',
+      unit_price: unit, // ← PRECIO FINAL que verá MP
+    };
+  });
+
+  // (Opcional) Chequeo rápido: suma enviada a MP vs cart.total
+  const mpSum = items.reduce((acc, it) => acc + it.unit_price * it.quantity, 0);
+  if (Math.abs(mpSum - Number(cart.total || 0)) > 0.01) {
+    console.warn('[mp.service] WARN: total MP != cart.total', { mpSum, cartTotal: cart.total });
+  }
 
   // Logs de diagnóstico del contenido a enviar
   console.log('[mp.service] createPreference — orderId =', String(orderId));
@@ -167,7 +208,6 @@ export async function createPreference(cart, orderId) {
       error: e?.error,
       status: e?.status,
       cause: e?.cause,
-      // bodySent: { ...body, items }, // si necesitás depurar el payload completo
     });
     throw e;
   }
