@@ -121,8 +121,8 @@ export default class CartService {
    */
   recalc(opts = {}) {
     const cart = this.data;
-    let subtotalCents = 0;
-    let discountCents = 0;
+    let baseSubtotalCents = 0; // suma de precios base (sin promo)
+    let discountCents = 0; // ahorro por promos
     let count = 0;
 
     const productsMap = opts.productsMap instanceof Map ? opts.productsMap : null;
@@ -172,24 +172,30 @@ export default class CartService {
           it.unitDiscountCents = unitDiscountCents;
         }
 
-        const lineFinalCents = Math.max(Math.round(it.unitFinalCents * it.qty), 0);
-        const lineDiscountCents = Math.max(Math.round(it.unitDiscountCents * it.qty), 0);
+        const qty = Math.max(Math.trunc(it.qty), 0);
+        const lineBaseCents = Math.max(Math.round(it.unitBaseCents * qty), 0); // antes de promo
+        const lineFinalCents = Math.max(Math.round(it.unitFinalCents * qty), 0); // con promo
+        const lineDiscountCents = Math.max(Math.round(it.unitDiscountCents * qty), 0);
+
+        // Subtotal por línea mostrado en la UI = precio final * qty (con promo aplicada)
         it.lineSubtotal = fromCents(lineFinalCents);
 
-        subtotalCents += lineFinalCents;
+        baseSubtotalCents += lineBaseCents;
         discountCents += lineDiscountCents;
-        count += it.qty;
+        count += qty;
 
         return it;
       })
       .filter(Boolean);
 
-    const totalCents = Math.max(subtotalCents, 0); // sin extras por ahora
-    cart._meta.subtotalCents = subtotalCents;
+    // Total = Subtotal base - Descuentos
+    const totalCents = Math.max(baseSubtotalCents - discountCents, 0);
+
+    cart._meta.subtotalCents = baseSubtotalCents;
     cart._meta.discountCents = discountCents;
     cart._meta.totalCents = totalCents;
 
-    cart.subtotal = fromCents(subtotalCents);
+    cart.subtotal = fromCents(baseSubtotalCents);
     cart.discount = fromCents(discountCents);
     cart.total = fromCents(totalCents);
     cart.count = count;

@@ -47,7 +47,7 @@
 
                             <td class="text-center">
                                 <form action="/cart/qty/{{productId}}" method="post"
-                                    class="d-flex justify-content-center">
+                                    class="d-flex justify-content-center qty-form">
                                     <input type="number" name="qty" min="0" value="{{qty}}"
                                         class="form-control form-control-sm text-center" style="max-width:90px;">
                                 </form>
@@ -83,11 +83,12 @@
                         <dt class="col-6 text-muted">Ítems</dt>
                         <dd class="col-6 text-end">{{cart.count}}</dd>
 
+                        {{!-- Subtotal ahora es "antes de promos" (precio base total) --}}
                         <dt class="col-6 text-muted">Subtotal</dt>
                         <dd class="col-6 text-end">{{currency cart.subtotal}}</dd>
 
                         <dt class="col-6 text-muted">Descuentos</dt>
-                        <dd class="col-6 text-end">{{currency cart.discount}}</dd>
+                        <dd class="col-6 text-end">- {{currency cart.discount}}</dd>
 
                         <div class="col-12">
                             <hr>
@@ -105,3 +106,22 @@
         </div>
     </div>
 </div>
+
+{{!-- Auto-submit al cambiar cantidad --}}
+<script nonce="{{cspNonce}}">
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('form.qty-form input[name="qty"]').forEach((inp) => {
+            inp.addEventListener('change', () => {
+                const form = inp.closest('form');
+                if (form) form.submit();
+            });
+            inp.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const form = inp.closest('form');
+                    if (form) form.submit();
+                }
+            });
+        });
+    });
+</script>
